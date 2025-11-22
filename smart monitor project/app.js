@@ -56,22 +56,85 @@ if (location.pathname.indexOf('dashboard.html') !== -1) {
   const logsEl = document.getElementById('logs');
   const lightTimerEl = document.getElementById('lightTimer');
 
-  // Live values: read latest pushed values under /SensorData/temperature etc.
-  const tempRef = db.ref('/SensorData/temperature').limitToLast(1);
-  const humRef  = db.ref('/SensorData/humidity').limitToLast(1);
-  const lightRef= db.ref('/SensorData/light').limitToLast(1);
+  // Check if elements exist
+  if (!tempEl) console.error('temp element not found');
+  if (!humEl) console.error('hum element not found');
 
-  tempRef.on('child_added', snap => {
-    const val = snap.val();
-    tempEl.innerText = (val !== null) ? (val + ' °C') : '-- °C';
+  // First, let's explore the Firebase structure to find the correct path
+  db.ref('/').once('value', snap => {
+    const root = snap.val();
+    console.log('Firebase root structure:', root);
+    if (root) {
+      console.log('Root keys:', Object.keys(root));
+    }
   });
-  humRef.on('child_added', snap => {
-    const val = snap.val();
-    humEl.innerText = (val !== null) ? (val + ' %') : '-- %';
+
+  // Try multiple possible paths
+  const possiblePaths = [
+    '/SensorData/temperature',
+    '/sensorData/temperature',
+    '/Sensors/temperature',
+    '/sensors/temperature',
+    '/Data/temperature',
+    '/data/temperature',
+    '/temperature',
+    '/sensor_data/temperature'
+  ];
+
+  // Test each path to find where the data actually is
+  possiblePaths.forEach(path => {
+    db.ref(path).once('value', snap => {
+      const data = snap.val();
+      if (data !== null && data !== undefined) {
+        console.log(`✓ Found data at path: ${path}`, data);
+      }
+    });
   });
-  lightRef.on('child_added', snap => {
+
+  // Live values: read from /sensors (the actual path in Firebase)
+  const tempRef = db.ref('/sensors/temperature');
+  const humRef  = db.ref('/sensors/humidity');
+  const lightRef= db.ref('/sensors/light');
+
+  // Temperature listener - data is stored as direct value at /sensors/temperature
+  tempRef.on('value', snap => {
     const val = snap.val();
-    lightEl.innerText = 'Light: ' + (val || '--');
+    console.log('Temperature data received:', val);
+    
+    if (tempEl) {
+      if (val !== null && val !== undefined) {
+        tempEl.innerText = 'Temp: ' + val + ' °C';
+        console.log('✓ Temperature updated:', val);
+      } else {
+        tempEl.innerText = 'Temp: -- °C';
+      }
+    }
+  });
+  
+  // Humidity listener - data is stored as direct value at /sensors/humidity
+  humRef.on('value', snap => {
+    const val = snap.val();
+    console.log('Humidity data received:', val);
+    
+    if (humEl) {
+      if (val !== null && val !== undefined) {
+        humEl.innerText = 'Humidity: ' + val + ' %';
+        console.log('✓ Humidity updated:', val);
+      } else {
+        humEl.innerText = 'Humidity: -- %';
+      }
+    }
+  });
+  
+  // Light listener - data is stored as direct value at /sensors/light
+  lightRef.on('value', snap => {
+    const val = snap.val();
+    console.log('Light data received:', val);
+    
+    if (lightEl) {
+      lightEl.innerText = 'Light: ' + (val || '--');
+    }
+    
     // start/stop timer if light on
     if (val === 'ON') {
       lightStart = Date.now();
@@ -103,20 +166,38 @@ if (location.pathname.indexOf('dashboard.html') !== -1) {
     }
   });
 
-  // Logs: show last 30 entries from temperature pushes (they are child nodes)
-  const logsRef = db.ref('/SensorData/temperature').limitToLast(30);
+  // Logs: Since temperature is a single value, we'll track changes over time
+  // Store recent values in an array
+  let temperatureHistory = [];
+  const maxLogEntries = 30;
+  
+  const logsRef = db.ref('/sensors/temperature');
   logsRef.on('value', snap => {
-    logsEl.innerHTML = '';
-    const data = snap.val();
-    if (!data) { logsEl.innerHTML = '<i>No logs</i>'; return; }
-    // show as latest first
-    const keys = Object.keys(data).reverse();
-    keys.forEach(k => {
-      const v = data[k];
-      const el = document.createElement('div');
-      el.textContent = 'T: ' + v;
-      logsEl.appendChild(el);
-    });
+    const val = snap.val();
+    if (val !== null && val !== undefined) {
+      // Add timestamp and value to history
+      temperatureHistory.push({
+        time: new Date().toLocaleTimeString(),
+        value: val
+      });
+      // Keep only last 30 entries
+      if (temperatureHistory.length > maxLogEntries) {
+        temperatureHistory.shift();
+      }
+      
+      // Update logs display
+      logsEl.innerHTML = '';
+      if (temperatureHistory.length === 0) {
+        logsEl.innerHTML = '<i>No logs</i>';
+      } else {
+        // Show as latest first
+        temperatureHistory.slice().reverse().forEach(entry => {
+          const el = document.createElement('div');
+          el.textContent = entry.time + ' - T: ' + entry.value + ' °C';
+          logsEl.appendChild(el);
+        });
+      }
+    }
   });
 
   // light timer helpers
