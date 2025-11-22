@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Monitor Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="neon-bg">
+
+  <div class="topbar">
+    <h3>Smart Monitor</h3>
+    <button id="logout" class="tiny">Logout</button>
+  </div>
+
+  <div id="notif" class="notif hidden"></div>
+
+  <div class="app">
+
+    <div class="card neon-card">
+      <h4>Environment</h4>
+      <p id="temp">Temp: -- °C</p>
+      <p id="hum">Humidity: -- %</p>
+    </div>
+
+    <div class="card neon-card">
+      <h4>Light Status</h4>
+      <p id="light">Light: --</p>
+      <p id="lightTimer">Light ON for: 0s</p>
+      <p id="alarm">Alarm: --</p>
+
+      <button id="ackTemp" class="neon-btn on">Acknowledge Temp Alarm</button>
+      <button id="ackLight" class="neon-btn off">Acknowledge Light Alarm</button>
+    </div>
+
+    <div class="card neon-card">
+      <h4>Latest Logs</h4>
+      <div id="logs" class="logs">No logs yet</div>
+    </div>
+  </div>
+
+  <!-- Firebase COMPAT libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Your Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Dashboard Logic -->
+  <script src="app.js"></script>
+
+  <script>
+    document.getElementById("logout").onclick = () => {
+      firebase.auth().signOut().then(() => location.href = "index.html");
+    };
+
+    document.getElementById("ackTemp").onclick = () => acknowledge("temperature");
+    document.getElementById("ackLight").onclick = () => acknowledge("light");
+  </script>
+</body>
+</html>

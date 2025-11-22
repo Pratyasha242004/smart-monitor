@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smart Monitor - Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body class="neon-bg">
+
+  <div class="login-card">
+    <h2 class="neon-title">Smart Monitor Login</h2>
+
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+
+    <button id="btnLogin" class="neon-btn on">Login</button>
+
+    <p class="muted">
+      Don't have an account? <a id="signupLink" href="#">Sign Up</a>
+    </p>
+  </div>
+
+  <!-- Firebase COMPAT libraries -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Your Firebase Config -->
+  <script src="firebase-config.js"></script>
+
+  <!-- Your main JS logic -->
+  <script src="app.js"></script>
+
+  <script>
+    document.getElementById("btnLogin").onclick = login;
+    document.getElementById("signupLink").onclick = (e) => {
+      e.preventDefault();
+      const mail = prompt("Enter Email:");
+      const pass = prompt("Enter Password (min 6 chars):");
+      if (mail && pass) signup(mail, pass);
+    };
+  </script>
+</body>
+</html>
